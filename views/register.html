@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Project - Register</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <style>
+        /* Optional internal styles to keep the form looking tidy if main.css doesn't cover it */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #successMessage {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: none;
+            max-width: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Event Browsing & Registration</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="events.html">Events</a>
+            <a href="event-details.html">Event Details</a>
+            <a href="register.html">Register</a>
+            <a href="about.html">About</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Register / RSVP for an Event</h2>
+        <p>Fill out the form below to secure your spot at one of our upcoming events.</p>
+
+        <form id="rsvpForm">
+            <div class="form-group">
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="John Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" name="email" required placeholder="john@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="eventSelect">Select Event:</label>
+                <select id="eventSelect" name="eventSelect" required>
+                    <option value="" disabled selected>-- Choose an event --</option>
+                    <option value="tech-conference">Tech Conference 2024 (San Francisco)</option>
+                    <option value="health-expo">Health and Wellness Expo (New York)</option>
+                    <option value="art-festival">Art and Culture Festival (Chicago)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="guests">Number of Guests:</label>
+                <input type="number" id="guests" name="guests" min="0" max="5" value="0">
+            </div>
+
+            <button type="submit">Submit RSVP</button>
+        </form>
+
+        <div id="successMessage"></div>
+    </main>
+
+    <script>
+        document.getElementById('rsvpForm').addEventListener('submit', function(event) {
+            // Prevent the default form submission (page reload)
+            event.preventDefault();
+
+            // Grab the values from the form inputs
+            const name = document.getElementById('fullName').value;
+            const eventName = document.getElementById('eventSelect').options[document.getElementById('eventSelect').selectedIndex].text;
+
+            // Generate a confirmation message
+            const messageElement = document.getElementById('successMessage');
+            messageElement.innerHTML = `<strong>Thank you, ${name}!</strong> Your RSVP for the <em>${eventName}</em> has been received successfully.`;
+            messageElement.style.display = 'block';
+
+            // Clear the form fields
+            document.getElementById('rsvpForm').reset();
+        });
+    </script>
+</body>
+</html>
