@@ -1,0 +1,125 @@
+/* General page setup */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f6f8;
+    color: #222;
+    line-height: 1.6;
+}
+
+/* Header area */
+header {
+    background-color: #1f3a5f;
+    color: white;
+    padding: 25px 20px;
+    text-align: center;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+header h1 {
+    margin: 0 0 15px 0;
+    font-size: 32px;
+    color: white;
+}
+
+/* Navigation menu */
+nav {
+    margin-top: 10px;
+}
+
+nav a {
+    display: inline-block;
+    margin: 5px 8px;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: white;
+    background-color: #2f5d8c;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+nav a:hover {
+    background-color: #4f86c6;
+}
+
+/* Main content area */
+main {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Page headings */
+h2 {
+    color: #1f3a5f;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+h3 {
+    color: #2f5d8c;
+    font-size: 24px;
+}
+
+/* Sections */
+section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9fbfd;
+    border-left: 5px solid #2f5d8c;
+    border-radius: 6px;
+}
+
+/* Paragraphs */
+p {
+    font-size: 17px;
+    margin-bottom: 15px;
+}
+
+strong {
+    color: #1f3a5f;
+}
+
+/* Optional button style */
+button,
+.btn {
+    background-color: #1f3a5f;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover,
+.btn:hover {
+    background-color: #4f86c6;
+}
+
+/* Mobile friendly layout */
+@media screen and (max-width: 600px) {
+    header h1 {
+        font-size: 24px;
+    }
+
+    nav a {
+        display: block;
+        margin: 8px auto;
+        width: 90%;
+    }
+
+    main {
+        margin: 15px;
+        padding: 18px;
+    }
+}
