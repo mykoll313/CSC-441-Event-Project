@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10252e">
+<title>Stocktail | Your Cocktail Recipe</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#10252e;background:#f8f5ec}
+*{box-sizing:border-box}body{margin:0}.top{background:#10252e;color:white;padding:17px 20px;font-weight:900;letter-spacing:.12em}.top span{color:#d39a28}
+main{max-width:720px;margin:auto;padding:18px 16px 55px}.hero{width:100%;max-height:330px;object-fit:cover;border-radius:16px;background:#10252e}
+h1{font-family:Georgia,serif;font-size:2.3rem;margin:15px 0 5px}.desc{color:#59666b;line-height:1.5}
+.card{background:white;border:1px solid #ddd8cc;border-radius:14px;padding:18px;margin-top:18px}
+h2{font-size:1.05rem;letter-spacing:.05em;margin:0 0 12px}.item{padding:12px 0;border-top:1px solid #eee}
+.item:first-of-type{border-top:0}.amount{color:#a66d0c;font-weight:750}.product{margin-top:5px;font-weight:650}
+.loc{color:#2e7d45;font-size:.9rem;margin-top:3px}.muted{color:#59666b;font-size:.9rem}
+ol{padding-left:22px;line-height:1.6}li{padding-bottom:8px}
+.status{padding:22px;text-align:center}.warn{background:#fff3db;border-radius:9px;padding:10px;margin-top:14px}
+button{background:#10252e;color:white;border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+footer{color:#59666b;font-size:.8rem;margin-top:26px;text-align:center}
+</style>
+</head>
+<body>
+<header class="top">STOCK<span>TAIL</span></header>
+<main id="app"><div class="card status" role="status">Loading your recipe…</div></main>
+<script>
+"use strict";
+// This is a public publishable key, NOT a service-role or secret key.
+const SUPABASE_URL = "https://mzajcasbnupvmncdizti.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_I2_StEDOjJ4sIj3ZpENZ9w_9JT40_Fk";
+const app = document.getElementById("app");
+const params = new URLSearchParams(location.search);
+const cocktailId = Number(params.get("cocktail_id"));
+function el(tag, className, value) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (value !== undefined && value !== null) node.textContent = String(value);
+  return node;
+}
+function fail(message) {
+  app.replaceChildren();
+  const card=el("section","card status");
+  card.append(el("h2","", "Recipe unavailable"),el("p","",message));
+  const retry=el("button","","Try again");
+  retry.addEventListener("click",load);
+  card.append(retry);app.append(card);
+}
+function selectedProducts() {
+  const encoded=params.get("items");
+  if (!encoded) return {};
+  try {
+    if (encoded.length>5000) return {};
+    const normalized=encoded.replace(/-/g,"+").replace(/_/g,"/");
+    const binary=atob(normalized);
+    const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+    const obj=JSON.parse(new TextDecoder().decode(bytes));
+    return obj && typeof obj==="object" && !Array.isArray(obj) ? obj : {};
+  } catch {return {};}
+}
+function directions(value) {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value!=="string") return [];
+  const s=value.trim();
+  if (!s) return [];
+  try {const a=JSON.parse(s);if(Array.isArray(a))return a.map(String).filter(Boolean);}catch{}
+  return s.split(/\r?\n/).map(x=>x.replace(/^\s*\d+[.)]\s*/,"").trim()).filter(Boolean);
+}
+function imageUrl(path) {
+  if (!path || typeof path!=="string")return "";
+  if (/^https:\/\//i.test(path))return path;
+  // Supabase public bucket convention; adjust if your image_path uses a different bucket.
+  return `${SUPABASE_URL}/storage/v1/object/public/cocktail-images/${path.replace(/^\/+/,"").split("/").map(encodeURIComponent).join("/")}`;
+}
+function locationText(locations) {
+  if (!Array.isArray(locations))return "";
+  return locations.map(l=>{
+    if (!l || typeof l!=="object")return "";
+    if (l.locationLabel)return String(l.locationLabel);
+    return [l.aisle&&`Aisle ${l.aisle}`,l.section&&`Section ${l.section}`,l.shelf&&`Shelf ${l.shelf}`,l.position&&`Position ${l.position}`].filter(Boolean).join(" • ");
+  }).filter(Boolean).join(" / ");
+}
+function render(cocktail) {
+  const chosen=selectedProducts();
+  app.replaceChildren();
+  const src=imageUrl(cocktail.image_path);
+  if(src){const img=el("img","hero");img.src=src;img.alt=`${cocktail.cocktail_name} cocktail`;img.onerror=()=>img.remove();app.append(img);}
+  app.append(el("h1","",cocktail.cocktail_name||"Cocktail"));
+  if(cocktail.description)app.append(el("p","desc",cocktail.description));
+  if(cocktail.serving_size)app.append(el("p","muted",`Serving size: ${cocktail.serving_size}`));
+  const card=el("section","card");card.append(el("h2","","INGREDIENTS"));
+  const ingredients=Array.isArray(cocktail.ingredients)?cocktail.ingredients:[];
+  for(const ing of ingredients){
+    const row=el("div","item");
+    const qty=ing.displayQuantity || [ing.requiredQuantity,ing.requiredUnit].filter(x=>x!==null&&x!==undefined&&x!=="").join(" ");
+    const heading=el("div");
+    if(qty)heading.append(el("span","amount",`${qty}  `));
+    heading.append(document.createTextNode(ing.displayName||ing.ingredientName||"Ingredient"));
+    row.append(heading);
+    const products=Array.isArray(ing.products)?ing.products.filter(p=>Number(p.quantityOnHand)>0):[];
+    // Confirm the selected product belongs to this ingredient's returned products.
+    const requested=chosen[String(ing.ingredientId)];
+    const product=products.find(p=>String(p.inventoryId)===String(requested))||products[0];
+    if(product){
+      const label=[product.brand,product.productName, [product.packageQuantity,product.packageUnit].filter(x=>x!==null&&x!==undefined&&x!=="").join(" ")].filter(Boolean);
+      // Avoid repeating brand if already present in product name.
+      if(label[0]&&label[1]&&String(label[1]).toLowerCase().includes(String(label[0]).toLowerCase()))label.shift();
+      row.append(el("div","product",label.join(" • ")));
+      const place=locationText(product.locations);
+      if(place)row.append(el("div","loc",place));
+    }else{
+      row.append(el("div","muted",ing.available?"No specific store product required":"Ask staff about availability"));
+    }
+    card.append(row);
+  }
+  if(!ingredients.length)card.append(el("p","muted","No ingredient details are available."));
+  app.append(card);
+  const steps=directions(cocktail.instructions);
+  const instructions=el("section","card");instructions.append(el("h2","","DIRECTIONS"));
+  if(steps.length){const ol=el("ol");steps.forEach(s=>ol.append(el("li","",s)));instructions.append(ol);}
+  else instructions.append(el("p","muted","Preparation instructions are not available."));
+  app.append(instructions);
+  app.append(el("footer","","Product availability and shelf locations may change. Ask store staff for assistance."));
+}
+async function load(){
+  if(!Number.isSafeInteger(cocktailId)||cocktailId<=0){fail("The QR code does not contain a valid cocktail ID.");return;}
+  app.replaceChildren(el("div","card status","Loading your recipe…"));
+  try{
+    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_stocktail_cocktails`,{
+      method:"POST",
+      headers:{"apikey":SUPABASE_PUBLISHABLE_KEY,"Content-Type":"application/json"},
+      body:"{}"
+    });
+    if(!response.ok)throw new Error(`Supabase returned ${response.status}. Check function access and RLS policies.`);
+    const data=await response.json();
+    const rows=Array.isArray(data)?data:[data];
+    // The function may return SETOF jsonb (objects), or a one-column RPC response.
+    const recipe=rows.map(x=>x?.get_stocktail_cocktails??x).find(x=>Number(x?.cocktail_id)===cocktailId);
+    if(!recipe){fail("This recipe is not currently available. It may be out of stock.");return;}
+    render(recipe);
+  }catch(error){fail(`Unable to load the recipe. ${error.message||"Please try again."}`);}
+}
+load();
+</script>
+</body>
+</html>
